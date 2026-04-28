@@ -8,7 +8,9 @@
   },
   "activationEvents": [
     "onStartupFinished",
-    "onCommand:gdbScript.runCurrent"
+    "onCommand:gdbScript.runCurrent",
+    "onCommand:gdbScript.startIceman",
+    "onCommand:gdbScript.stopIceman"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -24,6 +26,45 @@
           "type": "string",
           "default": "gdb-multiarch",
           "description": "Path to debugger."
+        },
+        "gdbScriptRunner.iceman.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Start Andes ICEman automatically before running the current GDB script."
+        },
+        "gdbScriptRunner.iceman.executable": {
+          "type": "string",
+          "default": "C:\\Andestech\\AndeSight_RDS_v511\\ice\\ICEman.exe",
+          "description": "Path to the Andes ICEman executable."
+        },
+        "gdbScriptRunner.iceman.args": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Arguments passed to Andes ICEman."
+        },
+        "gdbScriptRunner.iceman.cwd": {
+          "type": "string",
+          "default": "C:\\Andestech\\AndeSight_RDS_v511\\ice",
+          "description": "Working directory used to start Andes ICEman."
+        },
+        "gdbScriptRunner.iceman.useAndesEnvironment": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start Andes ICEman with the same HOME, PATH, SHELL, and CYGPATH environment layout as the Andes IDE launcher."
+        },
+        "gdbScriptRunner.iceman.andesRoot": {
+          "type": "string",
+          "default": "C:\\Andestech\\AndeSight_RDS_v511",
+          "description": "Root directory of the Andes installation."
+        },
+        "gdbScriptRunner.iceman.startupDelayMs": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 0,
+          "description": "Delay before GDB starts after launching Andes ICEman."
         }
       }
     },
@@ -32,6 +73,16 @@
         "command": "gdbScript.runCurrent",
         "title": "Run GDB Script (F5)",
         "icon": "$(debug-start)"
+      },
+      {
+        "command": "gdbScript.startIceman",
+        "title": "Start Andes ICEman",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "gdbScript.stopIceman",
+        "title": "Stop Andes ICEman",
+        "icon": "$(debug-stop)"
       }
     ],
     "menus": {
