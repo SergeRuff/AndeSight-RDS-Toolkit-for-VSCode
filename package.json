@@ -39,7 +39,17 @@
         },
         "gdbScriptRunner.iceman.args": {
           "type": "array",
-          "default": [],
+          "default": [        
+            "--bport=9900",
+            "--tport=9901",
+            "--port=9902:49151",
+            "-Z",
+            "v5",
+            "--device-usb-combo",
+            "002:008:006",
+            "-I",
+            "gwusb_ftdi_single.cfg"
+        ],
           "items": {
             "type": "string"
           },
