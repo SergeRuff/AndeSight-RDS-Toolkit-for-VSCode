@@ -115,42 +115,7 @@ function startTail(logPath) {
     tailTimer = setInterval(() => readNewLogData(channel), 200);
 }
 
-function getDefaultLaunchJson() {
-    return {
-        version: "0.2.0",
-        configurations: [
-            {
-                name: "GDB-Multiarch: run script file",
-                type: "cppdbg",
-                request: "launch",
-                MIMode: "gdb",
-                miDebuggerPath: "gdb-multiarch.exe",
-                targetArchitecture: "x86",
-
-                program: "${workspaceFolder}/${config:gdbScriptRunner.program}",
-                cwd: "${workspaceFolder}",
-
-                setupCommands: [
-                    { text: "set logging file ${cwd}/gdb-session.log" },
-                    { text: "set logging overwrite on" },
-                    { text: "set logging redirect off" },
-                    { text: "set logging enabled on" }
-                ],
-
-                customLaunchSetupCommands: [
-                    { text: "cd ${cwd}" },
-                    { text: "file ${config:gdbScriptRunner.program}" },
-                    { text: "source ${fileBasename}" }
-                ],
-
-                launchCompleteCommand: "None",
-                logging: {}
-            }
-        ]
-    };
-}
-
-async function ensureLaunchJson(folder) {
+async function ensureLaunchJson(context, folder) {
     const vscodeDir = path.join(folder.uri.fsPath, ".vscode");
     const launchPath = path.join(vscodeDir, "launch.json");
 
@@ -168,13 +133,22 @@ async function ensureLaunchJson(folder) {
         return;
     }
 
-    await fs.promises.mkdir(vscodeDir, { recursive: true });
+    const templatePath = path.join(context.extensionPath, "launch_default.json");
 
-    const content = JSON.stringify(getDefaultLaunchJson(), null, 4) + "\n";
+    let content;
+    try {
+        content = await fs.promises.readFile(templatePath, "utf8");
+    } catch (error) {
+        vscode.window.showErrorMessage(`GDB Script Runner launch_default.json template not found: ${templatePath}`);
+        return;
+    }
+
+    await fs.promises.mkdir(vscodeDir, { recursive: true });
     await fs.promises.writeFile(launchPath, content, "utf8");
 
     vscode.window.showInformationMessage("Created .vscode/launch.json for GDB Script Runner.");
 }
+
 
 function expandConfigValue(value, editor, folder) {
     if (typeof value === "string") {
@@ -222,7 +196,7 @@ function getDebugConfiguration(folder, editor) {
 async function activate(context) {
     if (vscode.workspace.workspaceFolders) {
         for (const folder of vscode.workspace.workspaceFolders) {
-            await ensureLaunchJson(folder);
+            await ensureLaunchJson(context, folder);
         }
     }
 

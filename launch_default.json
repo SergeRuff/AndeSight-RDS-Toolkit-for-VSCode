@@ -1,0 +1,69 @@
+{
+    "configurations": [
+        {
+            "name":"GDB-Multiarch: run GDB",
+            "type":"cppdbg",
+            "request": "launch",
+
+            "MIMode": "gdb",
+            "miDebuggerPath": "${config:gdbScriptRunner.debugger}",
+            "targetArchitecture": "x86",        // Костыль для cpp-debug
+
+            "program": "${workspaceFolder}/${config:gdbScriptRunner.program}",
+            "cwd": "${workspaceFolder}",
+
+            "setupCommands": [
+                {"text": "set logging file ${cwd}/gdb-session.log"  },
+                {"text": "set logging overwrite on"                 },
+                {"text": "set logging redirect off"                 },
+                {"text": "set logging enabled on"                   }
+            ],
+            
+            "customLaunchSetupCommands": [
+                {"text": "cd ${cwd}"                                },
+                {"text": "file ${config:gdbScriptRunner.program}"   },   
+            ],
+
+            "launchCompleteCommand": "None",
+            "logging": {
+                // "engineLogging": true,
+                // "trace": true,
+                // "traceResponse": true,
+                // "programOutput": true,
+            }
+        },
+        {
+            "name":"GDB-Multiarch: run script file",
+            "type":"cppdbg",
+            "request": "launch",
+
+            "MIMode": "gdb",
+            "miDebuggerPath": "${config:gdbScriptRunner.debugger}",
+            "targetArchitecture": "x86",        // Костыль для cpp-debug
+
+            "program": "${workspaceFolder}/${config:gdbScriptRunner.program}",
+            "cwd": "${workspaceFolder}",
+
+            "setupCommands": [
+                {"text": "set logging file ${cwd}/gdb-session.log"  },
+                {"text": "set logging overwrite on"                 },
+                {"text": "set logging redirect off"                 },
+                {"text": "set logging enabled on"                   },
+            ],
+            
+            "customLaunchSetupCommands": [
+                {"text": "cd ${cwd}"                                },
+                {"text": "file ${config:gdbScriptRunner.program}"   },                
+                {"text": "source ${fileBasename}"                   },
+            ],
+
+            "launchCompleteCommand": "None",
+            "logging": {
+                // "engineLogging": true,
+                // "trace": true,
+                // "traceResponse": true,
+                // "programOutput": true,
+            }
+        },        
+    ]
+}
