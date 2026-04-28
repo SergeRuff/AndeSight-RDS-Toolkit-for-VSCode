@@ -34,7 +34,7 @@
         },
         "gdbScriptRunner.iceman.executable": {
           "type": "string",
-          "default": "C:\\Andestech\\AndeSight_RDS_v511\\ice\\ICEman.exe",
+          "default": "${config:gdbScriptRunner.iceman.andesRoot}\\ice\\ICEman.exe",
           "description": "Path to the Andes ICEman executable."
         },
         "gdbScriptRunner.iceman.args": {
@@ -57,7 +57,7 @@
         },
         "gdbScriptRunner.iceman.cwd": {
           "type": "string",
-          "default": "C:\\Andestech\\AndeSight_RDS_v511\\ice",
+          "default": "${config:gdbScriptRunner.iceman.andesRoot}\\ice",
           "description": "Working directory used to start Andes ICEman."
         },
         "gdbScriptRunner.iceman.useAndesEnvironment": {
