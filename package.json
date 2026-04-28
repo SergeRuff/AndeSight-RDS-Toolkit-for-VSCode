@@ -14,70 +14,86 @@
   ],
   "main": "./extension.js",
   "contributes": {
-    "configuration": {
-      "title": "GDB Script Runner",
-      "properties": {
-        "gdbScriptRunner.program": {
-          "type": "string",
-          "default": "./spl/u-boot-spl",
-          "description": "Relative path to Program/ELF file used by GDB Script Runner."
-        },
-        "gdbScriptRunner.debugger": {
-          "type": "string",
-          "default": "gdb-multiarch",
-          "description": "Path to debugger."
-        },
-        "gdbScriptRunner.iceman.enabled": {
-          "type": "boolean",
-          "default": false,
-          "description": "Start Andes ICEman automatically before running the current GDB script."
-        },
-        "gdbScriptRunner.iceman.executable": {
-          "type": "string",
-          "default": "${config:gdbScriptRunner.iceman.andesRoot}\\ice\\ICEman.exe",
-          "description": "Path to the Andes ICEman executable."
-        },
-        "gdbScriptRunner.iceman.args": {
-          "type": "array",
-          "default": [        
-            "--bport=9900",
-            "--tport=9901",
-            "--port=9902:49151",
-            "-Z",
-            "v5",
-            "--device-usb-combo",
-            "002:008:006",
-            "-I",
-            "gwusb_ftdi_single.cfg"
-        ],
-          "items": {
-            "type": "string"
+    "configuration": [
+      {
+        "title": "GDB Script Runner",
+        "properties": {
+          "gdbScriptRunner.program": {
+            "type": "string",
+            "default": "./spl/u-boot-spl",
+            "description": "Relative path to Program/ELF file used by GDB Script Runner.",
+            "order": 1
           },
-          "description": "Arguments passed to Andes ICEman."
-        },
-        "gdbScriptRunner.iceman.cwd": {
-          "type": "string",
-          "default": "${config:gdbScriptRunner.iceman.andesRoot}\\ice",
-          "description": "Working directory used to start Andes ICEman."
-        },
-        "gdbScriptRunner.iceman.useAndesEnvironment": {
-          "type": "boolean",
-          "default": true,
-          "description": "Start Andes ICEman in a VS Code terminal using the Cygwin bash environment from the Andes IDE launcher."
-        },
-        "gdbScriptRunner.iceman.andesRoot": {
-          "type": "string",
-          "default": "C:\\Andestech\\AndeSight_RDS_v511",
-          "description": "Root directory of the Andes installation."
-        },
-        "gdbScriptRunner.iceman.startupDelayMs": {
-          "type": "number",
-          "default": 1000,
-          "minimum": 0,
-          "description": "Delay before GDB starts after launching Andes ICEman."
+          "gdbScriptRunner.debugger": {
+            "type": "string",
+            "default": "gdb-multiarch",
+            "description": "Path to debugger.",
+            "order": 2
+          }
+        }
+      },
+      {
+        "title": "GDB Script Runner: Andes ICEman",
+        "properties": {
+          "gdbScriptRunner.iceman.enabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Start Andes ICEman automatically before running the current GDB script.",
+            "order": 1
+          },
+          "gdbScriptRunner.iceman.andesRoot": {
+            "type": "string",
+            "default": "C:\\Andestech\\AndeSight_RDS_v511",
+            "description": "Root directory of the Andes installation.",
+            "order": 2
+          },
+          "gdbScriptRunner.iceman.executable": {
+            "type": "string",
+            "default": "${config:gdbScriptRunner.iceman.andesRoot}\\ice\\ICEman.exe",
+            "description": "Path to the Andes ICEman executable.",
+            "order": 3
+          },
+          "gdbScriptRunner.iceman.cwd": {
+            "type": "string",
+            "default": "${config:gdbScriptRunner.iceman.andesRoot}\\ice",
+            "description": "Working directory used to start Andes ICEman.",
+            "order": 4
+          },
+          "gdbScriptRunner.iceman.args": {
+            "type": "array",
+            "default": [
+              "--bport=9900",
+              "--tport=9901",
+              "--port=9902:49151",
+              "-Z",
+              "v5",
+              "--device-usb-combo",
+              "002:008:006",
+              "-I",
+              "gwusb_ftdi_single.cfg"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Arguments passed to Andes ICEman.",
+            "order": 5
+          },
+          "gdbScriptRunner.iceman.useAndesEnvironment": {
+            "type": "boolean",
+            "default": true,
+            "description": "Start Andes ICEman in a VS Code terminal using the Cygwin bash environment from the Andes IDE launcher.",
+            "order": 6
+          },
+          "gdbScriptRunner.iceman.startupDelayMs": {
+            "type": "number",
+            "default": 1000,
+            "minimum": 0,
+            "description": "Delay before GDB starts after launching Andes ICEman.",
+            "order": 7
+          }
         }
       }
-    },
+    ],
     "commands": [
       {
         "command": "gdbScript.runCurrent",
