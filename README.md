@@ -1,4 +1,4 @@
-# GDB Script Runner
+# AndeSight RDS Toolkit for VSCode
 
 Runs the active `.gdb` script through the selected VS Code debug configuration.
 

@@ -141,7 +141,7 @@ async function ensureLaunchJson(context, folder) {
     }
 
     const answer = await vscode.window.showWarningMessage(
-        `No .vscode/launch.json found in "${folder.name}". Create a default GDB Script Runner launch.json?`,
+        `No .vscode/launch.json found in "${folder.name}". Create a default launch.json for GDB Scripts?`,
         "Create",
         "Skip"
     );
@@ -156,14 +156,14 @@ async function ensureLaunchJson(context, folder) {
     try {
         content = await fs.promises.readFile(templatePath, "utf8");
     } catch (error) {
-        vscode.window.showErrorMessage(`GDB Script Runner launch_default.json template not found: ${templatePath}`);
+        vscode.window.showErrorMessage(`Template not found: ${templatePath}`);
         return;
     }
 
     await fs.promises.mkdir(vscodeDir, { recursive: true });
     await fs.promises.writeFile(launchPath, content, "utf8");
 
-    vscode.window.showInformationMessage("Created .vscode/launch.json for GDB Script Runner.");
+    vscode.window.showInformationMessage("Created .vscode/launch.json for GDB Scripts Runner.");
 }
 
 

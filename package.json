@@ -1,6 +1,6 @@
 {
-  "name": "gdb-script-runner",
-  "displayName": "GDB Script Runner",
+  "name": "andesight-rds-toolkit",
+  "displayName": "AndeSight RDS Toolkit for VSCode",
   "version": "0.0.1",
   "publisher": "local",
   "engines": {
@@ -16,12 +16,12 @@
   "contributes": {
     "configuration": [
       {
-        "title": "GDB Script Runner",
+        "title": "AndeSight RDS Toolkit for VSCode",
         "properties": {
           "gdbScriptRunner.program": {
             "type": "string",
             "default": "./spl/u-boot-spl",
-            "description": "Relative path to Program/ELF file used by GDB Script Runner.",
+            "description": "Relative path to Program/ELF file used by AndeSight RDS Toolkit for VSCode.",
             "order": 1
           },
           "gdbScriptRunner.debugger": {
@@ -33,7 +33,7 @@
         }
       },
       {
-        "title": "GDB Script Runner: Andes ICEman",
+        "title": "AndeSight RDS Toolkit for VSCode: Andes ICEman",
         "properties": {
           "gdbScriptRunner.iceman.enabled": {
             "type": "boolean",
