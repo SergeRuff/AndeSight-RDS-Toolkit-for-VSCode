@@ -1,0 +1,47 @@
+{
+  "name": "gdb-script-runner",
+  "displayName": "GDB Script Runner",
+  "version": "0.0.1",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:gdbScript.runCurrent"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "GDB Script Runner",
+      "properties": {
+        "gdbScriptRunner.program": {
+          "type": "string",
+          "default": "./spl/u-boot-spl",
+          "description": "Relative path to Program/ELF file used by GDB Script Runner."
+        },
+        "gdbScriptRunner.debugger": {
+          "type": "string",
+          "default": "gdb-multiarch",
+          "description": "Path to debugger."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "gdbScript.runCurrent",
+        "title": "Run GDB Script (F5)",
+        "icon": "$(debug-start)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "gdbScript.runCurrent",
+          "when": "resourceExtname == .gdb",
+          "group": "navigation"
+        }
+      ]
+    }
+  }
+}
