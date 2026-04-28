@@ -1,10 +1,9 @@
 const fs = require("fs");
 const path = require("path");
-const { spawn } = require("child_process");
 const vscode = require("vscode");
 
 let outputChannel;
-let icemanProcess;
+let icemanTerminal;
 let tailTimer;
 let lastLogPath;
 let tailState = {
@@ -19,15 +18,6 @@ function getOutputChannel() {
     }
 
     return outputChannel;
-}
-
-function getIcemanOutputChannel() {
-    return getOutputChannel();
-}
-
-function appendIcemanOutput(text) {
-    const channel = getIcemanOutputChannel();
-    channel.append(text);
 }
 
 function getWorkspaceFolderForCommand(editor) {
@@ -232,34 +222,66 @@ function getPathEnvKey(env) {
     return Object.keys(env).find((key) => key.toUpperCase() === "PATH") || "PATH";
 }
 
-function buildIcemanEnvironment(icemanConfig) {
+function getAndesPaths(icemanConfig) {
+    const andesRoot = trimTrailingSeparators(icemanConfig.andesRoot || "");
+
+    if (!andesRoot) {
+        return undefined;
+    }
+
+    const home = path.join(andesRoot, "ice");
+    const cygwinBin = path.join(andesRoot, "cygwin", "bin");
+
+    return {
+        andesRoot,
+        home,
+        homeForEnv: ensureTrailingSeparator(home),
+        cygwinBin,
+        bashPath: path.join(cygwinBin, "bash.exe")
+    };
+}
+
+function buildIcemanEnvironment(icemanConfig, andesPaths) {
     const env = { ...process.env };
 
     if (!icemanConfig.useAndesEnvironment) {
         return env;
     }
 
-    const andesRoot = trimTrailingSeparators(icemanConfig.andesRoot || "");
-
-    if (!andesRoot) {
+    if (!andesPaths) {
         return env;
     }
 
-    const home = path.join(andesRoot, "ice");
-    const cygwinBin = path.join(andesRoot, "cygwin", "bin");
-    const bashPath = path.join(cygwinBin, "bash.exe");
-    const homeForEnv = ensureTrailingSeparator(home);
     const pathKey = getPathEnvKey(env);
 
-    env.HOME = homeForEnv;
-    env[pathKey] = `${cygwinBin};${homeForEnv};${env[pathKey] || ""}`;
+    env.HOME = andesPaths.homeForEnv;
+    env[pathKey] = `${andesPaths.cygwinBin};${andesPaths.homeForEnv};${env[pathKey] || ""}`;
     env.CYGPATH = "cygpath";
 
-    if (fs.existsSync(bashPath)) {
+    if (fs.existsSync(andesPaths.bashPath)) {
         env.SHELL = "/bin/bash";
     }
 
     return env;
+}
+
+function quoteCmdArg(value) {
+    return `"${String(value).replace(/"/g, '""')}"`;
+}
+
+function quoteBashString(value) {
+    return `'${String(value).replace(/'/g, "'\\''")}'`;
+}
+
+function buildCmdCommand(executable, args) {
+    return [quoteCmdArg(executable), ...args.map(quoteCmdArg)].join(" ");
+}
+
+function buildBashIcemanCommand(executable, args) {
+    const executableCommand = `"$(cygpath -u ${quoteBashString(executable)})"`;
+    const quotedArgs = args.map(quoteBashString);
+
+    return [executableCommand, ...quotedArgs].join(" ");
 }
 
 function normalizeIcemanArgs(args) {
@@ -275,7 +297,7 @@ function normalizeIcemanArgs(args) {
 }
 
 async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
-    if (icemanProcess) {
+    if (icemanTerminal) {
         if (showAlreadyRunningMessage) {
             vscode.window.showInformationMessage("Andes ICEman is already running.");
         }
@@ -293,51 +315,44 @@ async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
 
     const args = normalizeIcemanArgs(icemanConfig.args);
     const cwd = icemanConfig.cwd || (folder && folder.uri.fsPath);
-    const env = buildIcemanEnvironment(icemanConfig);
-    const shell = /\.(bat|cmd)$/i.test(executable);
-    const channel = getIcemanOutputChannel();
+    const andesPaths = getAndesPaths(icemanConfig);
+    const env = buildIcemanEnvironment(icemanConfig, andesPaths);
 
-    channel.show(true);
-    channel.appendLine(`Starting Andes ICEman: ${executable}${args.length ? ` ${args.join(" ")}` : ""}`);
-
-    let startFailed = false;
-
-    try {
-        icemanProcess = spawn(executable, args, {
-            cwd,
-            env,
-            shell,
-            windowsHide: true
-        });
-    } catch (error) {
-        icemanProcess = undefined;
-        vscode.window.showErrorMessage(`Failed to start Andes ICEman: ${error.message}`);
+    if (icemanConfig.useAndesEnvironment && (!andesPaths || !fs.existsSync(andesPaths.bashPath))) {
+        vscode.window.showErrorMessage("Andes Cygwin bash.exe was not found. Check gdbScriptRunner.iceman.andesRoot.");
         return false;
     }
 
-    icemanProcess.stdout.on("data", (data) => appendIcemanOutput(data.toString()));
-    icemanProcess.stderr.on("data", (data) => appendIcemanOutput(data.toString()));
+    const terminalOptions = {
+        name: "Andes ICEman",
+        cwd,
+        env
+    };
 
-    icemanProcess.on("error", (error) => {
-        startFailed = true;
-        icemanProcess = undefined;
-        vscode.window.showErrorMessage(`Andes ICEman error: ${error.message}`);
-    });
+    let command;
 
-    icemanProcess.on("exit", (code, signal) => {
-        channel.appendLine(`Andes ICEman exited with ${signal || code}.`);
-        icemanProcess = undefined;
-    });
+    if (icemanConfig.useAndesEnvironment) {
+        terminalOptions.shellPath = andesPaths.bashPath;
+        terminalOptions.shellArgs = ["--login", "-i"];
+        command = buildBashIcemanCommand(executable, args);
+    } else {
+        terminalOptions.shellPath = process.env.ComSpec || "cmd.exe";
+        command = buildCmdCommand(executable, args);
+    }
+
+    icemanTerminal = vscode.window.createTerminal(terminalOptions);
+    icemanTerminal.show(true);
+    icemanTerminal.sendText(command, true);
 
     if (icemanConfig.startupDelayMs > 0) {
         await delay(icemanConfig.startupDelayMs);
     }
 
-    return !startFailed && !!icemanProcess;
+    return true;
 }
 
 function stopIceman(showMessage = true) {
-    if (!icemanProcess) {
+    if (!icemanTerminal) {
         if (showMessage) {
             vscode.window.showInformationMessage("Andes ICEman is not running.");
         }
@@ -345,9 +360,9 @@ function stopIceman(showMessage = true) {
         return;
     }
 
-    const processToStop = icemanProcess;
-    icemanProcess = undefined;
-    processToStop.kill();
+    const terminalToStop = icemanTerminal;
+    icemanTerminal = undefined;
+    terminalToStop.dispose();
 
     if (showMessage) {
         vscode.window.showInformationMessage("Stopped Andes ICEman.");
@@ -444,12 +459,19 @@ async function activate(context) {
         stopTail();
     });
 
+    const closeTerminalDisposable = vscode.window.onDidCloseTerminal((terminal) => {
+        if (terminal === icemanTerminal) {
+            icemanTerminal = undefined;
+        }
+    });
+
     context.subscriptions.push(
         disposable,
         startIcemanDisposable,
         stopIcemanDisposable,
         startDisposable,
         terminateDisposable,
+        closeTerminalDisposable,
         {
             dispose: () => {
                 stopTail();

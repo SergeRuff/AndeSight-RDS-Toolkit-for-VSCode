@@ -53,7 +53,7 @@
         "gdbScriptRunner.iceman.useAndesEnvironment": {
           "type": "boolean",
           "default": true,
-          "description": "Start Andes ICEman with the same HOME, PATH, SHELL, and CYGPATH environment layout as the Andes IDE launcher."
+          "description": "Start Andes ICEman in a VS Code terminal using the Cygwin bash environment from the Andes IDE launcher."
         },
         "gdbScriptRunner.iceman.andesRoot": {
           "type": "string",
