@@ -10,7 +10,8 @@
     "onStartupFinished",
     "onCommand:gdbScript.runCurrent",
     "onCommand:gdbScript.startIceman",
-    "onCommand:gdbScript.stopIceman"
+    "onCommand:gdbScript.stopIceman",
+    "onCommand:gdbScript.regenerateLaunchJson"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -128,18 +129,23 @@
     "commands": [
       {
         "command": "gdbScript.runCurrent",
-        "title": "Run GDB Script (F5)",
+        "title": "AndeSight RDS Toolkit for VSCode: Run GDB Script (F5)",
         "icon": "$(debug-start)"
       },
       {
         "command": "gdbScript.startIceman",
-        "title": "Start Andes ICEman",
+        "title": "AndeSight RDS Toolkit for VSCode: Start Andes ICEman",
         "icon": "$(debug-start)"
       },
       {
         "command": "gdbScript.stopIceman",
-        "title": "Stop Andes ICEman",
+        "title": "AndeSight RDS Toolkit for VSCode: Stop Andes ICEman",
         "icon": "$(debug-stop)"
+      },
+      {
+        "command": "gdbScript.regenerateLaunchJson",
+        "title": "AndeSight RDS Toolkit for VSCode: Regenerate launch.json via default template",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {

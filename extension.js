@@ -151,6 +151,12 @@ async function ensureLaunchJson(context, folder) {
         return;
     }
 
+    await writeDefaultLaunchJson(context, folder);
+}
+
+async function writeDefaultLaunchJson(context, folder) {
+    const vscodeDir = path.join(folder.uri.fsPath, ".vscode");
+    const launchPath = path.join(vscodeDir, "launch.json");
     const templatePath = path.join(context.extensionPath, "launch_default.json");
 
     let content;
@@ -420,6 +426,32 @@ async function activate(context) {
         stopIceman(true);
     });
 
+    const regenerateLaunchDisposable = vscode.commands.registerCommand("gdbScript.regenerateLaunchJson", async () => {
+        const editor = vscode.window.activeTextEditor;
+        const folder = getWorkspaceFolderForCommand(editor);
+
+        if (!folder) {
+            vscode.window.showErrorMessage("Open a workspace folder before regenerating launch.json.");
+            return;
+        }
+
+        const launchPath = path.join(folder.uri.fsPath, ".vscode", "launch.json");
+
+        if (fs.existsSync(launchPath)) {
+            const answer = await vscode.window.showWarningMessage(
+                `Replace existing .vscode/launch.json in "${folder.name}" with the default template?`,
+                "Replace",
+                "Cancel"
+            );
+
+            if (answer !== "Replace") {
+                return;
+            }
+        }
+
+        await writeDefaultLaunchJson(context, folder);
+    });
+
     const disposable = vscode.commands.registerCommand("gdbScript.runCurrent", async () => {
         const editor = vscode.window.activeTextEditor;
 
@@ -480,6 +512,7 @@ async function activate(context) {
         disposable,
         startIcemanDisposable,
         stopIcemanDisposable,
+        regenerateLaunchDisposable,
         startDisposable,
         terminateDisposable,
         closeTerminalDisposable,
