@@ -51,6 +51,12 @@
             "default": "9902",
             "description": "GDB target port used by the CDT GDB target adapter.",
             "order": 5
+          },
+          "gdbScriptRunner.svd.path": {
+            "type": "string",
+            "default": "${extensionPath}/svd/AE350-4GB.svd",
+            "description": "Path to the SVD file used by CDT Peripheral Inspector.",
+            "order": 6
           }
         }
       },

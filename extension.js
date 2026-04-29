@@ -173,16 +173,17 @@ function expandConfigValue(value, editor, folder) {
         const filePath = editor ? editor.document.uri.fsPath : "";
         const folderPath = folder ? folder.uri.fsPath : "";
         const workspaceConfig = vscode.workspace.getConfiguration(undefined, folder && folder.uri);
-
-        return value
+        const expandString = (text) => text
             .replace(/\$\{file\}/g, filePath)
             .replace(/\$\{fileBasename\}/g, filePath ? path.basename(filePath) : "")
             .replace(/\$\{workspaceFolder\}/g, folderPath)
             .replace(/\$\{cwd\}/g, folderPath)
-            .replace(/\$\{extensionPath\}/g, extensionPath || "")
+            .replace(/\$\{extensionPath\}/g, extensionPath || "");
+
+        return expandString(value)
             .replace(/\$\{config:([^}]+)\}/g, (_, key) => {
                 const configValue = workspaceConfig.get(key);
-                return configValue === undefined ? "" : String(configValue);
+                return configValue === undefined ? "" : expandString(String(configValue));
             });
     }
 
