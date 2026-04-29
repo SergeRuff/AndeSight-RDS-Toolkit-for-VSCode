@@ -6,6 +6,7 @@ let outputChannel;
 let icemanTerminal;
 let tailTimer;
 let lastLogPath;
+let extensionPath;
 let tailState = {
     filePath: undefined,
     offset: 0,
@@ -172,15 +173,17 @@ function expandConfigValue(value, editor, folder) {
         const filePath = editor ? editor.document.uri.fsPath : "";
         const folderPath = folder ? folder.uri.fsPath : "";
         const workspaceConfig = vscode.workspace.getConfiguration(undefined, folder && folder.uri);
-
-        return value
+        const expandString = (text) => text
             .replace(/\$\{file\}/g, filePath)
             .replace(/\$\{fileBasename\}/g, filePath ? path.basename(filePath) : "")
             .replace(/\$\{workspaceFolder\}/g, folderPath)
             .replace(/\$\{cwd\}/g, folderPath)
+            .replace(/\$\{extensionPath\}/g, extensionPath || "");
+
+        return expandString(value)
             .replace(/\$\{config:([^}]+)\}/g, (_, key) => {
                 const configValue = workspaceConfig.get(key);
-                return configValue === undefined ? "" : String(configValue);
+                return configValue === undefined ? "" : expandString(String(configValue));
             });
     }
 
@@ -381,6 +384,7 @@ function getDebugConfiguration(folder, editor) {
     const selectedName = vscode.workspace.getConfiguration("debug").get("selectedConfiguration");
     const baseConfig =
         configurations.find((config) => config.name === selectedName) ||
+        configurations.find((config) => config.name === "CDT GDB Target: run script file") ||
         configurations.find((config) => config.name === "GDB-Multiarch: run script file") ||
         configurations[0];
 
@@ -392,6 +396,8 @@ function getDebugConfiguration(folder, editor) {
 }
 
 async function activate(context) {
+    extensionPath = context.extensionPath;
+
     if (vscode.workspace.workspaceFolders) {
         for (const folder of vscode.workspace.workspaceFolders) {
             await ensureLaunchJson(context, folder);
