@@ -29,6 +29,28 @@
             "default": "gdb-multiarch",
             "description": "Path to debugger.",
             "order": 2
+          },
+          "gdbScriptRunner.target.type": {
+            "type": "string",
+            "default": "remote",
+            "enum": [
+              "remote",
+              "extended-remote"
+            ],
+            "description": "GDB target connection type used by the CDT GDB target adapter.",
+            "order": 3
+          },
+          "gdbScriptRunner.target.host": {
+            "type": "string",
+            "default": "localhost",
+            "description": "GDB target host used by the CDT GDB target adapter.",
+            "order": 4
+          },
+          "gdbScriptRunner.target.port": {
+            "type": "string",
+            "default": "9902",
+            "description": "GDB target port used by the CDT GDB target adapter.",
+            "order": 5
           }
         }
       },

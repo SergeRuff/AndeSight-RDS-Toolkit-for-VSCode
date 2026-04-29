@@ -381,6 +381,7 @@ function getDebugConfiguration(folder, editor) {
     const selectedName = vscode.workspace.getConfiguration("debug").get("selectedConfiguration");
     const baseConfig =
         configurations.find((config) => config.name === selectedName) ||
+        configurations.find((config) => config.name === "CDT GDB Target: run script file") ||
         configurations.find((config) => config.name === "GDB-Multiarch: run script file") ||
         configurations[0];
 

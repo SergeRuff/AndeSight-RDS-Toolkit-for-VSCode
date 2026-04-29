@@ -35,4 +35,4 @@ Commands:
 - `Stop Andes ICEman`
 - `Run GDB Script (F5)`
 
-Use your `.gdb` script or `launch.json` setup commands to connect GDB to the ICEman server, for example with the target command used by your ICEman configuration.
+Use `launch.json` target settings to connect GDB to the ICEman server. Keep `target remote ...` out of `.gdb` scripts when using the CDT `gdbtarget` configurations.
