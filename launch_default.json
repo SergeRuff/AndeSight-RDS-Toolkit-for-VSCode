@@ -27,7 +27,7 @@
 
             "initCommands": [],
 
-            "gdbAsync": true,
+            "gdbAsync": false,
             "auxiliaryGdb": false,
             "verbose": false
         },
@@ -60,7 +60,7 @@
                 "source ${file}"
             ],
 
-            "gdbAsync": true,
+            "gdbAsync": false,
             "auxiliaryGdb": false,
             "verbose": false
         }
