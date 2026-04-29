@@ -6,6 +6,7 @@ let outputChannel;
 let icemanTerminal;
 let tailTimer;
 let lastLogPath;
+let lastPreparedScriptPath;
 let tailState = {
     filePath: undefined,
     offset: 0,
@@ -201,6 +202,15 @@ function expandConfigValue(value, editor, folder) {
     return value;
 }
 
+function getScriptConfiguration(folder) {
+    const config = vscode.workspace.getConfiguration("gdbScriptRunner.script", folder && folder.uri);
+
+    return {
+        pauseOnBreakpoints: config.get("pauseOnBreakpoints", true),
+        pauseCommand: config.get("pauseCommand", "python input('GDB script breakpoint. Press Enter to continue...')")
+    };
+}
+
 function getIcemanConfiguration(folder, editor) {
     const config = vscode.workspace.getConfiguration("gdbScriptRunner.iceman", folder && folder.uri);
 
@@ -301,6 +311,129 @@ function normalizeIcemanArgs(args) {
     return [];
 }
 
+function isSameFsPath(left, right) {
+    return path.normalize(left).toLowerCase() === path.normalize(right).toLowerCase();
+}
+
+function getGdbScriptBreakpointLines(editor) {
+    const scriptPath = editor.document.uri.fsPath;
+    const lines = new Set();
+
+    for (const breakpoint of vscode.debug.breakpoints) {
+        if (!(breakpoint instanceof vscode.SourceBreakpoint) || !breakpoint.enabled) {
+            continue;
+        }
+
+        if (isSameFsPath(breakpoint.location.uri.fsPath, scriptPath)) {
+            lines.add(breakpoint.location.range.start.line + 1);
+        }
+    }
+
+    return lines;
+}
+
+function quoteGdbPath(filePath) {
+    return `"${filePath.replace(/\\/g, "/").replace(/"/g, "\\\"")}"`;
+}
+
+async function prepareGdbScriptForBreakpoints(folder, editor) {
+    const scriptConfig = getScriptConfiguration(folder);
+
+    if (!scriptConfig.pauseOnBreakpoints) {
+        return editor.document.uri.fsPath;
+    }
+
+    const breakpointLines = getGdbScriptBreakpointLines(editor);
+
+    if (breakpointLines.size === 0) {
+        return editor.document.uri.fsPath;
+    }
+
+    const text = editor.document.getText();
+    const lines = text.split(/\r?\n/);
+    const preparedLines = [
+        `# Generated from ${editor.document.uri.fsPath}`,
+        "# Breakpoint pauses are inserted from VS Code UI breakpoints."
+    ];
+
+    for (let index = 0; index < lines.length; index++) {
+        const lineNumber = index + 1;
+
+        if (breakpointLines.has(lineNumber)) {
+            preparedLines.push(`echo \\n[GDB Script Runner] Paused at ${path.basename(editor.document.uri.fsPath)}:${lineNumber}\\n`);
+            preparedLines.push(scriptConfig.pauseCommand);
+        }
+
+        preparedLines.push(lines[index]);
+    }
+
+    const generatedDir = path.join(folder.uri.fsPath, ".vscode", "gdb-script-runner");
+    const generatedPath = path.join(generatedDir, `${path.basename(editor.document.uri.fsPath)}.generated.gdb`);
+
+    await fs.promises.mkdir(generatedDir, { recursive: true });
+    await fs.promises.writeFile(generatedPath, preparedLines.join("\n"), "utf8");
+
+    lastPreparedScriptPath = generatedPath;
+
+    return generatedPath;
+}
+
+function replaceSourceCommandText(text, editor, scriptPath) {
+    const trimmed = text.trim();
+
+    if (!trimmed.startsWith("source ")) {
+        return text;
+    }
+
+    const sourceTarget = trimmed.slice("source ".length).replace(/^"|"$/g, "");
+    const sourceBasename = path.basename(sourceTarget);
+    const editorBasename = path.basename(editor.document.uri.fsPath);
+
+    if (
+        sourceTarget === "${fileBasename}" ||
+        sourceTarget === "${file}" ||
+        sourceBasename === editorBasename ||
+        isSameFsPath(sourceTarget, editor.document.uri.fsPath)
+    ) {
+        return `source ${quoteGdbPath(scriptPath)}`;
+    }
+
+    return text;
+}
+
+function applyPreparedScriptToDebugConfiguration(config, editor, scriptPath) {
+    if (!config || !Array.isArray(config.customLaunchSetupCommands)) {
+        return config;
+    }
+
+    let replaced = false;
+
+    config.customLaunchSetupCommands = config.customLaunchSetupCommands.map((command) => {
+        if (!command || typeof command.text !== "string") {
+            return command;
+        }
+
+        const nextText = replaceSourceCommandText(command.text, editor, scriptPath);
+
+        if (nextText !== command.text) {
+            replaced = true;
+        }
+
+        return {
+            ...command,
+            text: nextText
+        };
+    });
+
+    if (!replaced) {
+        config.customLaunchSetupCommands.push({
+            text: `source ${quoteGdbPath(scriptPath)}`
+        });
+    }
+
+    return config;
+}
+
 async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
     if (icemanTerminal) {
         if (showAlreadyRunningMessage) {
@@ -374,7 +507,7 @@ function stopIceman(showMessage = true) {
     }
 }
 
-function getDebugConfiguration(folder, editor) {
+async function getDebugConfiguration(folder, editor) {
     const launch = vscode.workspace.getConfiguration("launch", folder.uri);
     const configurations = launch.get("configurations", []);
 
@@ -388,7 +521,10 @@ function getDebugConfiguration(folder, editor) {
         return undefined;
     }
 
-    return expandConfigValue(baseConfig, editor, folder);
+    const preparedScriptPath = await prepareGdbScriptForBreakpoints(folder, editor);
+    const config = expandConfigValue(baseConfig, editor, folder);
+
+    return applyPreparedScriptToDebugConfiguration(config, editor, preparedScriptPath);
 }
 
 async function activate(context) {
@@ -441,7 +577,7 @@ async function activate(context) {
             }
         }
 
-        const config = getDebugConfiguration(folder, editor);
+        const config = await getDebugConfiguration(folder, editor);
 
         if (!config) {
             vscode.window.showErrorMessage("No debug configuration found in launch.json.");

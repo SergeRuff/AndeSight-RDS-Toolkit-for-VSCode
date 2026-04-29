@@ -33,6 +33,23 @@
         }
       },
       {
+        "title": "AndeSight RDS Toolkit for VSCode: GDB Scripts",
+        "properties": {
+          "gdbScriptRunner.script.pauseOnBreakpoints": {
+            "type": "boolean",
+            "default": true,
+            "description": "Insert pause commands into the generated GDB script at enabled VS Code UI breakpoints in the active .gdb file.",
+            "order": 1
+          },
+          "gdbScriptRunner.script.pauseCommand": {
+            "type": "string",
+            "default": "python input('GDB script breakpoint. Press Enter to continue...')",
+            "description": "GDB command inserted before a .gdb line that has an enabled VS Code UI breakpoint.",
+            "order": 2
+          }
+        }
+      },
+      {
         "title": "AndeSight RDS Toolkit for VSCode: Andes ICEman",
         "properties": {
           "gdbScriptRunner.iceman.enabled": {

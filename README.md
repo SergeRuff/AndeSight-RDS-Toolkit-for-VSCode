@@ -2,6 +2,18 @@
 
 Runs the active `.gdb` script through the selected VS Code debug configuration.
 
+## GDB Script Breakpoints
+
+Enabled VS Code breakpoints in the active `.gdb` file are honored by generating a temporary script under `.vscode/gdb-script-runner/` before launch. The generated script inserts `gdbScriptRunner.script.pauseCommand` before each line that has a UI breakpoint.
+
+Default pause command:
+
+```gdb
+python input('GDB script breakpoint. Press Enter to continue...')
+```
+
+Press Enter in the GDB debug console to continue script execution.
+
 ## Andes ICEman
 
 The extension can start Andes ICEman in a VS Code terminal before launching GDB.
