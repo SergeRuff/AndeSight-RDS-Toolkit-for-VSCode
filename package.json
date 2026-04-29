@@ -11,7 +11,8 @@
     "onCommand:gdbScript.runCurrent",
     "onCommand:gdbScript.startIceman",
     "onCommand:gdbScript.stopIceman",
-    "onCommand:gdbScript.regenerateLaunchJson"
+    "onCommand:gdbScript.regenerateLaunchJson",
+    "onCommand:gdbScript.openDisassemblyViewRight"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -124,7 +125,15 @@
       }
     ],
     "configurationDefaults": {
-      "peripheral-inspector.definitionPathConfig": "definitionPath"
+      "peripheral-inspector.definitionPathConfig": "definitionPath",
+      "memory-inspector.debugTypes": [
+        "gdb",
+        "gdbtarget",
+        "embedded-debug",
+        "arm-debugger"
+      ],
+      "memory-inspector.columns.variables": true,
+      "memory-inspector.columns.ascii": true
     },
     "commands": [
       {
@@ -146,9 +155,21 @@
         "command": "gdbScript.regenerateLaunchJson",
         "title": "AndeSight RDS Toolkit for VSCode: Regenerate launch.json via default template",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "gdbScript.openDisassemblyViewRight",
+        "title": "AndeSight RDS Toolkit for VSCode: Show Disassembly View Right",
+        "icon": "$(split-horizontal)"
       }
     ],
     "menus": {
+      "editor/context": [
+        {
+          "command": "gdbScript.openDisassemblyViewRight",
+          "when": "inDebugMode",
+          "group": "debug"
+        }
+      ],
       "editor/title": [
         {
           "command": "gdbScript.runCurrent",

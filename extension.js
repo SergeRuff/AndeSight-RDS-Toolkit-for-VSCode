@@ -452,6 +452,11 @@ async function activate(context) {
         await writeDefaultLaunchJson(context, folder);
     });
 
+    const openDisassemblyRightDisposable = vscode.commands.registerCommand("gdbScript.openDisassemblyViewRight", async () => {
+        await vscode.commands.executeCommand("debug.action.openDisassemblyView");
+        await vscode.commands.executeCommand("workbench.action.moveEditorToNextGroup");
+    });
+
     const disposable = vscode.commands.registerCommand("gdbScript.runCurrent", async () => {
         const editor = vscode.window.activeTextEditor;
 
@@ -513,6 +518,7 @@ async function activate(context) {
         startIcemanDisposable,
         stopIcemanDisposable,
         regenerateLaunchDisposable,
+        openDisassemblyRightDisposable,
         startDisposable,
         terminateDisposable,
         closeTerminalDisposable,
