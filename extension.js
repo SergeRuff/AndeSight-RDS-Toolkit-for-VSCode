@@ -391,13 +391,7 @@ function getDebugConfiguration(folder, editor) {
         return undefined;
     }
 
-    const config = expandConfigValue(baseConfig, editor, folder);
-
-    if (config.type === "gdbtarget" && !config.definitionPath && extensionPath) {
-        config.definitionPath = path.join(extensionPath, "svd", "AE350-4GB.svd");
-    }
-
-    return config;
+    return expandConfigValue(baseConfig, editor, folder);
 }
 
 async function activate(context) {

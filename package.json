@@ -116,6 +116,9 @@
         }
       }
     ],
+    "configurationDefaults": {
+      "peripheral-inspector.definitionPathConfig": "definitionPath"
+    },
     "commands": [
       {
         "command": "gdbScript.runCurrent",
