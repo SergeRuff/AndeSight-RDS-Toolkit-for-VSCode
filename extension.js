@@ -6,6 +6,7 @@ let outputChannel;
 let icemanTerminal;
 let tailTimer;
 let lastLogPath;
+let extensionPath;
 let tailState = {
     filePath: undefined,
     offset: 0,
@@ -178,6 +179,7 @@ function expandConfigValue(value, editor, folder) {
             .replace(/\$\{fileBasename\}/g, filePath ? path.basename(filePath) : "")
             .replace(/\$\{workspaceFolder\}/g, folderPath)
             .replace(/\$\{cwd\}/g, folderPath)
+            .replace(/\$\{extensionPath\}/g, extensionPath || "")
             .replace(/\$\{config:([^}]+)\}/g, (_, key) => {
                 const configValue = workspaceConfig.get(key);
                 return configValue === undefined ? "" : String(configValue);
@@ -389,10 +391,18 @@ function getDebugConfiguration(folder, editor) {
         return undefined;
     }
 
-    return expandConfigValue(baseConfig, editor, folder);
+    const config = expandConfigValue(baseConfig, editor, folder);
+
+    if (config.type === "gdbtarget" && !config.definitionPath && extensionPath) {
+        config.definitionPath = path.join(extensionPath, "svd", "AE350-4GB.svd");
+    }
+
+    return config;
 }
 
 async function activate(context) {
+    extensionPath = context.extensionPath;
+
     if (vscode.workspace.workspaceFolders) {
         for (const folder of vscode.workspace.workspaceFolders) {
             await ensureLaunchJson(context, folder);

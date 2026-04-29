@@ -8,6 +8,7 @@
             "gdb": "${config:gdbScriptRunner.debugger}",
             "program": "${workspaceFolder}/${config:gdbScriptRunner.program}",
             "cwd": "${workspaceFolder}",
+            "definitionPath": "${extensionPath}/svd/AE350-4GB.svd",
 
             "target": {
                 "type": "${config:gdbScriptRunner.target.type}",
@@ -39,6 +40,7 @@
             "gdb": "${config:gdbScriptRunner.debugger}",
             "program": "${workspaceFolder}/${config:gdbScriptRunner.program}",
             "cwd": "${workspaceFolder}",
+            "definitionPath": "${extensionPath}/svd/AE350-4GB.svd",
 
             "target": {
                 "type": "${config:gdbScriptRunner.target.type}",
