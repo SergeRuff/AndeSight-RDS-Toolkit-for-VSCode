@@ -178,7 +178,7 @@
       {
         "command": "gdbScript.openDisassemblyViewRight",
         "title": "RDS: Show Disassembly View",
-        "icon": "$(split-horizontal)"
+        "icon": "$(open-preview)"
       }
     ],
     "menus": {
@@ -190,6 +190,11 @@
         }
       ],
       "editor/title": [
+        {
+          "command": "gdbScript.openDisassemblyViewRight",
+          "when": "inDebugMode",
+          "group": "navigation"
+        },
         {
           "command": "gdbScript.runCurrent",
           "when": "resourceExtname == .gdb",
