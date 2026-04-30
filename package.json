@@ -15,6 +15,9 @@
     "onCommand:gdbScript.openDisassemblyViewRight"
   ],
   "main": "./extension.js",
+  "extensionDependencies": [
+    "eclipse-cdt.cdt-gdb-vscode"
+  ],
   "contributes": {
     "configuration": [
       {
