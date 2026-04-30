@@ -18,6 +18,20 @@
   "extensionDependencies": [
     "eclipse-cdt.cdt-gdb-vscode"
   ],
+  "extensionPack": [
+    "ms-vscode.cpptools-extension-pack",
+    "eclipse-cdt.memory-inspector",
+    "eclipse-cdt.peripheral-inspector",
+    "ms-vscode.vscode-serial-monitor",
+    "sunshaoce.RISC-V",
+    "ms-vscode.hexeditor",
+    "ms-vscode.makefile-tools",
+    "RobDerr.gcc-map-view",
+    "trond-snekvik.gnu-mapfiles",
+    "ZixuanWang.linkerscript",
+    "dingzhaojie.bit-peek",
+    "pierre-payen.gdb-syntax"
+  ],
   "contributes": {
     "configuration": [
       {
