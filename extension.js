@@ -1,4 +1,5 @@
 const fs = require("fs");
+const net = require("net");
 const path = require("path");
 const vscode = require("vscode");
 
@@ -310,6 +311,38 @@ function normalizeIcemanArgs(args) {
     return [];
 }
 
+function getTargetEndpoint(folder) {
+    const config = vscode.workspace.getConfiguration("gdbScriptRunner.target", folder && folder.uri);
+
+    return {
+        host: config.get("host", "localhost"),
+        port: Number(config.get("port", "9902"))
+    };
+}
+
+function isTcpPortOpen(host, port, timeoutMs = 500) {
+    return new Promise((resolve) => {
+        const socket = new net.Socket();
+        let settled = false;
+
+        const finish = (isOpen) => {
+            if (settled) {
+                return;
+            }
+
+            settled = true;
+            socket.destroy();
+            resolve(isOpen);
+        };
+
+        socket.setTimeout(timeoutMs);
+        socket.once("connect", () => finish(true));
+        socket.once("timeout", () => finish(false));
+        socket.once("error", () => finish(false));
+        socket.connect(port, host);
+    });
+}
+
 async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
     if (icemanTerminal) {
         if (showAlreadyRunningMessage) {
@@ -321,6 +354,19 @@ async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
 
     const icemanConfig = getIcemanConfiguration(folder, editor);
     const executable = icemanConfig.executable && String(icemanConfig.executable).trim();
+    const targetEndpoint = getTargetEndpoint(folder);
+
+    if (!Number.isInteger(targetEndpoint.port) || targetEndpoint.port <= 0 || targetEndpoint.port > 65535) {
+        vscode.window.showErrorMessage(`Invalid GDB target port: ${targetEndpoint.port}.`);
+        return false;
+    }
+
+    if (await isTcpPortOpen(targetEndpoint.host, targetEndpoint.port)) {
+        vscode.window.showWarningMessage(
+            `GDB target ${targetEndpoint.host}:${targetEndpoint.port} is already in use. Skipping Andes ICEman start.`
+        );
+        return true;
+    }
 
     if (!executable) {
         vscode.window.showErrorMessage("Andes ICEman executable path is empty.");
