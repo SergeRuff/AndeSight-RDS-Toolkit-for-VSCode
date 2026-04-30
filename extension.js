@@ -488,6 +488,36 @@ function getDebugConfiguration(folder, editor) {
     return expandConfigValue(baseConfig, editor, folder);
 }
 
+function expandExtensionPathValue(value) {
+    if (typeof value === "string") {
+        return value.replace(/\$\{extensionPath\}/g, extensionPath || "");
+    }
+
+    if (Array.isArray(value)) {
+        return value.map(expandExtensionPathValue);
+    }
+
+    if (value && typeof value === "object") {
+        const result = {};
+
+        for (const [key, nestedValue] of Object.entries(value)) {
+            result[key] = expandExtensionPathValue(nestedValue);
+        }
+
+        return result;
+    }
+
+    return value;
+}
+
+function createDebugConfigurationProvider() {
+    return {
+        resolveDebugConfigurationWithSubstitutedVariables(_folder, config) {
+            return expandExtensionPathValue(config);
+        }
+    };
+}
+
 async function activate(context) {
     extensionPath = context.extensionPath;
 
@@ -600,6 +630,15 @@ async function activate(context) {
         }
     });
 
+    const gdbTargetDebugConfigurationProviderDisposable = vscode.debug.registerDebugConfigurationProvider(
+        "gdbtarget",
+        createDebugConfigurationProvider()
+    );
+    const gdbDebugConfigurationProviderDisposable = vscode.debug.registerDebugConfigurationProvider(
+        "gdb",
+        createDebugConfigurationProvider()
+    );
+
     context.subscriptions.push(
         disposable,
         startIcemanDisposable,
@@ -609,6 +648,8 @@ async function activate(context) {
         startDisposable,
         terminateDisposable,
         closeTerminalDisposable,
+        gdbTargetDebugConfigurationProviderDisposable,
+        gdbDebugConfigurationProviderDisposable,
         {
             dispose: () => {
                 stopTail();
