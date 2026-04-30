@@ -1,4 +1,5 @@
 const fs = require("fs");
+const net = require("net");
 const path = require("path");
 const vscode = require("vscode");
 
@@ -211,7 +212,7 @@ function expandConfigValue(value, editor, folder) {
 }
 
 function getIcemanConfiguration(folder, editor) {
-    const config = vscode.workspace.getConfiguration("gdbScriptRunner.iceman", folder && folder.uri);
+    const config = vscode.workspace.getConfiguration("andesIceman", folder && folder.uri);
 
     return {
         enabled: config.get("enabled", false),
@@ -220,7 +221,7 @@ function getIcemanConfiguration(folder, editor) {
         cwd: expandConfigValue(config.get("cwd", "${workspaceFolder}"), editor, folder),
         andesRoot: expandConfigValue(config.get("andesRoot", ""), editor, folder),
         useAndesEnvironment: config.get("useAndesEnvironment", false),
-        startupDelayMs: config.get("startupDelayMs", 1000)
+        startupDelayMs: config.get("startupDelayMs", 10000)
     };
 }
 
@@ -310,8 +311,81 @@ function normalizeIcemanArgs(args) {
     return [];
 }
 
+function getTargetEndpoint(folder) {
+    const config = vscode.workspace.getConfiguration("gdbScriptRunner.target", folder && folder.uri);
+
+    return {
+        host: config.get("host", "localhost"),
+        port: Number(config.get("port", "9902"))
+    };
+}
+
+function getTcpHostCandidates(host) {
+    const normalizedHost = String(host || "localhost").trim();
+
+    if (normalizedHost.toLowerCase() === "localhost") {
+        return ["127.0.0.1", "::1", "localhost"];
+    }
+
+    return [normalizedHost];
+}
+
+function isTcpPortOpen(host, port, timeoutMs = 500) {
+    return new Promise((resolve) => {
+        const socket = new net.Socket();
+        let settled = false;
+
+        const finish = (isOpen) => {
+            if (settled) {
+                return;
+            }
+
+            settled = true;
+            socket.destroy();
+            resolve(isOpen);
+        };
+
+        socket.setTimeout(timeoutMs);
+        socket.once("connect", () => finish(true));
+        socket.once("timeout", () => finish(false));
+        socket.once("error", () => finish(false));
+        socket.connect(port, host);
+    });
+}
+
+async function waitForTcpPortOpen(host, port, timeoutMs, intervalMs = 200) {
+    const deadline = Date.now() + timeoutMs;
+    const hostCandidates = getTcpHostCandidates(host);
+
+    while (Date.now() <= deadline) {
+        for (const candidateHost of hostCandidates) {
+            if (await isTcpPortOpen(candidateHost, port)) {
+                return true;
+            }
+        }
+
+        await delay(intervalMs);
+    }
+
+    return false;
+}
+
 async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
+    const targetEndpoint = getTargetEndpoint(folder);
+
+    if (!Number.isInteger(targetEndpoint.port) || targetEndpoint.port <= 0 || targetEndpoint.port > 65535) {
+        vscode.window.showErrorMessage(`Invalid GDB target port: ${targetEndpoint.port}.`);
+        return false;
+    }
+
     if (icemanTerminal) {
+        if (!(await waitForTcpPortOpen(targetEndpoint.host, targetEndpoint.port, 500, 0))) {
+            vscode.window.showErrorMessage(
+                `Andes ICEman terminal is open, but GDB target ${targetEndpoint.host}:${targetEndpoint.port} is not available. Check the Andes ICEman terminal for errors or restart ICEman.`
+            );
+            return false;
+        }
+
         if (showAlreadyRunningMessage) {
             vscode.window.showInformationMessage("Andes ICEman is already running.");
         }
@@ -321,6 +395,13 @@ async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
 
     const icemanConfig = getIcemanConfiguration(folder, editor);
     const executable = icemanConfig.executable && String(icemanConfig.executable).trim();
+
+    if (await waitForTcpPortOpen(targetEndpoint.host, targetEndpoint.port, 500, 0)) {
+        vscode.window.showWarningMessage(
+            `GDB target ${targetEndpoint.host}:${targetEndpoint.port} is already in use. Skipping Andes ICEman start.`
+        );
+        return true;
+    }
 
     if (!executable) {
         vscode.window.showErrorMessage("Andes ICEman executable path is empty.");
@@ -333,7 +414,7 @@ async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
     const env = buildIcemanEnvironment(icemanConfig, andesPaths);
 
     if (icemanConfig.useAndesEnvironment && (!andesPaths || !fs.existsSync(andesPaths.bashPath))) {
-        vscode.window.showErrorMessage("Andes Cygwin bash.exe was not found. Check gdbScriptRunner.iceman.andesRoot.");
+        vscode.window.showErrorMessage("Andes Cygwin bash.exe was not found. Check andesIceman.andesRoot.");
         return false;
     }
 
@@ -358,8 +439,14 @@ async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
     icemanTerminal.show(true);
     icemanTerminal.sendText(command, true);
 
-    if (icemanConfig.startupDelayMs > 0) {
-        await delay(icemanConfig.startupDelayMs);
+    const startupTimeoutMs = Math.max(icemanConfig.startupDelayMs, 1000);
+    const started = await waitForTcpPortOpen(targetEndpoint.host, targetEndpoint.port, startupTimeoutMs);
+
+    if (!started) {
+        vscode.window.showErrorMessage(
+            `Andes ICEman did not start correctly. GDB target ${targetEndpoint.host}:${targetEndpoint.port} is not available. Check the Andes ICEman terminal for errors.`
+        );
+        return false;
     }
 
     return true;
