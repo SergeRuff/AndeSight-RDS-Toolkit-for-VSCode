@@ -1,8 +1,9 @@
 {
   "name": "andesight-rds-toolkit",
   "displayName": "AndeSight RDS Toolkit for VSCode",
+  "icon": "media/logo.png",
   "version": "0.0.1",
-  "publisher": "local",
+  "publisher": "SergeRuff",
   "engines": {
     "vscode": "^1.90.0"
   },
