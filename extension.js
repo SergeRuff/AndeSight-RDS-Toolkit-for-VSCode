@@ -8,6 +8,7 @@ let icemanTerminal;
 let tailTimer;
 let lastLogPath;
 let extensionPath;
+let lastScriptPathByWorkspace = new Map();
 let tailState = {
     filePath: undefined,
     offset: 0,
@@ -32,6 +33,10 @@ function getWorkspaceFolderForCommand(editor) {
     }
 
     return vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+}
+
+function getWorkspaceKey(folder) {
+    return folder ? folder.uri.toString() : "";
 }
 
 function delay(ms) {
@@ -488,6 +493,56 @@ function getDebugConfiguration(folder, editor) {
     return expandConfigValue(baseConfig, editor, folder);
 }
 
+function setLastScriptPath(folder, scriptPath) {
+    lastScriptPathByWorkspace.set(getWorkspaceKey(folder), scriptPath);
+}
+
+function getLastScriptPath(folder) {
+    return lastScriptPathByWorkspace.get(getWorkspaceKey(folder));
+}
+
+function isScriptRunnerDebugConfiguration(config) {
+    return config.name === "CDT GDB Target: run script file" ||
+        config.name === "GDB-Multiarch: run script file";
+}
+
+function getConfigScriptPath(folder, config) {
+    if (config.__gdbScriptRunnerScriptPath) {
+        return config.__gdbScriptRunnerScriptPath;
+    }
+
+    if (isScriptRunnerDebugConfiguration(config)) {
+        return getLastScriptPath(folder);
+    }
+
+    return undefined;
+}
+
+function applyScriptPathToInitCommands(config, scriptPath) {
+    if (!scriptPath || !Array.isArray(config.initCommands)) {
+        return config;
+    }
+
+    return {
+        ...config,
+        initCommands: config.initCommands.map((command) => {
+            if (typeof command !== "string") {
+                return command;
+            }
+
+            if (command.includes("${file}")) {
+                return command.replace(/\$\{file\}/g, scriptPath);
+            }
+
+            if (/^\s*source\s+/.test(command)) {
+                return `source ${scriptPath}`;
+            }
+
+            return command;
+        })
+    };
+}
+
 function expandExtensionPathValue(value) {
     if (typeof value === "string") {
         return value.replace(/\$\{extensionPath\}/g, extensionPath || "");
@@ -512,8 +567,13 @@ function expandExtensionPathValue(value) {
 
 function createDebugConfigurationProvider() {
     return {
-        resolveDebugConfigurationWithSubstitutedVariables(_folder, config) {
-            return expandExtensionPathValue(config);
+        resolveDebugConfiguration(folder, config) {
+            const scriptPath = getConfigScriptPath(folder, config);
+            return applyScriptPathToInitCommands(config, scriptPath);
+        },
+        resolveDebugConfigurationWithSubstitutedVariables(folder, config) {
+            const scriptPath = getConfigScriptPath(folder, config);
+            return expandExtensionPathValue(applyScriptPathToInitCommands(config, scriptPath));
         }
     };
 }
@@ -583,11 +643,14 @@ async function activate(context) {
         }
 
         const folder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
+        const scriptPath = editor.document.uri.fsPath;
 
         if (!folder) {
             vscode.window.showErrorMessage("The .gdb file is not inside an opened workspace folder.");
             return;
         }
+
+        setLastScriptPath(folder, scriptPath);
 
         const logPath = path.join(folder.uri.fsPath, "gdb-session.log");
         startTail(logPath);
@@ -607,6 +670,8 @@ async function activate(context) {
             vscode.window.showErrorMessage("No debug configuration found in launch.json.");
             return;
         }
+
+        config.__gdbScriptRunnerScriptPath = scriptPath;
 
         await vscode.debug.startDebugging(folder, config);
 
