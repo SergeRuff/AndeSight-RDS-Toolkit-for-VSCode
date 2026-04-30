@@ -212,7 +212,7 @@ function expandConfigValue(value, editor, folder) {
 }
 
 function getIcemanConfiguration(folder, editor) {
-    const config = vscode.workspace.getConfiguration("gdbScriptRunner.iceman", folder && folder.uri);
+    const config = vscode.workspace.getConfiguration("andesIceman", folder && folder.uri);
 
     return {
         enabled: config.get("enabled", false),
@@ -379,7 +379,7 @@ async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
     const env = buildIcemanEnvironment(icemanConfig, andesPaths);
 
     if (icemanConfig.useAndesEnvironment && (!andesPaths || !fs.existsSync(andesPaths.bashPath))) {
-        vscode.window.showErrorMessage("Andes Cygwin bash.exe was not found. Check gdbScriptRunner.iceman.andesRoot.");
+        vscode.window.showErrorMessage("Andes Cygwin bash.exe was not found. Check andesIceman.andesRoot.");
         return false;
     }
 

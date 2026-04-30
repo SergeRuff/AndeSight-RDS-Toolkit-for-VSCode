@@ -10,17 +10,17 @@ Example workspace settings:
 
 ```json
 {
-  "gdbScriptRunner.iceman.enabled": true,
-  "gdbScriptRunner.iceman.executable": "C:\\Andestech\\AndeSight_RDS_v511\\ice\\ICEman.exe",
-  "gdbScriptRunner.iceman.args": [],
-  "gdbScriptRunner.iceman.cwd": "C:\\Andestech\\AndeSight_RDS_v511\\ice",
-  "gdbScriptRunner.iceman.andesRoot": "C:\\Andestech\\AndeSight_RDS_v511",
-  "gdbScriptRunner.iceman.useAndesEnvironment": true,
-  "gdbScriptRunner.iceman.startupDelayMs": 1000
+  "andesIceman.enabled": true,
+  "andesIceman.executable": "C:\\Andestech\\AndeSight_RDS_v511\\ice\\ICEman.exe",
+  "andesIceman.args": [],
+  "andesIceman.cwd": "C:\\Andestech\\AndeSight_RDS_v511\\ice",
+  "andesIceman.andesRoot": "C:\\Andestech\\AndeSight_RDS_v511",
+  "andesIceman.useAndesEnvironment": true,
+  "andesIceman.startupDelayMs": 1000
 }
 ```
 
-When `gdbScriptRunner.iceman.useAndesEnvironment` is enabled, the extension opens the Andes Cygwin `bash.exe` in a VS Code terminal and starts ICEman there. The terminal environment matches the Andes launcher batch file:
+When `andesIceman.useAndesEnvironment` is enabled, the extension opens the Andes Cygwin `bash.exe` in a VS Code terminal and starts ICEman there. The terminal environment matches the Andes launcher batch file:
 
 - `HOME` is set to `<andesRoot>\ice\`.
 - `<andesRoot>\cygwin\bin` and `<andesRoot>\ice\` are prepended to `PATH`.

@@ -63,33 +63,33 @@
         }
       },
       {
-        "title": "AndeSight RDS Toolkit for VSCode: Andes ICEman",
+        "title": "Andes ICEman",
         "properties": {
-          "gdbScriptRunner.iceman.enabled": {
+          "andesIceman.enabled": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "description": "Start Andes ICEman automatically before running the current GDB script.",
             "order": 1
           },
-          "gdbScriptRunner.iceman.andesRoot": {
+          "andesIceman.andesRoot": {
             "type": "string",
             "default": "C:\\Andestech\\AndeSight_RDS_v511",
             "description": "Root directory of the Andes installation.",
             "order": 2
           },
-          "gdbScriptRunner.iceman.executable": {
+          "andesIceman.executable": {
             "type": "string",
-            "default": "${config:gdbScriptRunner.iceman.andesRoot}\\ice\\ICEman.exe",
+            "default": "${config:andesIceman.andesRoot}\\ice\\ICEman.exe",
             "description": "Path to the Andes ICEman executable.",
             "order": 3
           },
-          "gdbScriptRunner.iceman.cwd": {
+          "andesIceman.cwd": {
             "type": "string",
-            "default": "${config:gdbScriptRunner.iceman.andesRoot}\\ice",
+            "default": "${config:andesIceman.andesRoot}\\ice",
             "description": "Working directory used to start Andes ICEman.",
             "order": 4
           },
-          "gdbScriptRunner.iceman.args": {
+          "andesIceman.args": {
             "type": "array",
             "default": [
               "--bport=9900",
@@ -108,13 +108,13 @@
             "description": "Arguments passed to Andes ICEman.",
             "order": 5
           },
-          "gdbScriptRunner.iceman.useAndesEnvironment": {
+          "andesIceman.useAndesEnvironment": {
             "type": "boolean",
             "default": true,
             "description": "Start Andes ICEman in a VS Code terminal using the Cygwin bash environment from the Andes IDE launcher.",
             "order": 6
           },
-          "gdbScriptRunner.iceman.startupDelayMs": {
+          "andesIceman.startupDelayMs": {
             "type": "number",
             "default": 1000,
             "minimum": 0,
