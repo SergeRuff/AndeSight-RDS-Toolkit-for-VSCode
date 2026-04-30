@@ -221,7 +221,7 @@ function getIcemanConfiguration(folder, editor) {
         cwd: expandConfigValue(config.get("cwd", "${workspaceFolder}"), editor, folder),
         andesRoot: expandConfigValue(config.get("andesRoot", ""), editor, folder),
         useAndesEnvironment: config.get("useAndesEnvironment", false),
-        startupDelayMs: config.get("startupDelayMs", 1000)
+        startupDelayMs: config.get("startupDelayMs", 10000)
     };
 }
 
@@ -320,6 +320,16 @@ function getTargetEndpoint(folder) {
     };
 }
 
+function getTcpHostCandidates(host) {
+    const normalizedHost = String(host || "localhost").trim();
+
+    if (normalizedHost.toLowerCase() === "localhost") {
+        return ["127.0.0.1", "::1", "localhost"];
+    }
+
+    return [normalizedHost];
+}
+
 function isTcpPortOpen(host, port, timeoutMs = 500) {
     return new Promise((resolve) => {
         const socket = new net.Socket();
@@ -343,6 +353,23 @@ function isTcpPortOpen(host, port, timeoutMs = 500) {
     });
 }
 
+async function waitForTcpPortOpen(host, port, timeoutMs, intervalMs = 200) {
+    const deadline = Date.now() + timeoutMs;
+    const hostCandidates = getTcpHostCandidates(host);
+
+    while (Date.now() <= deadline) {
+        for (const candidateHost of hostCandidates) {
+            if (await isTcpPortOpen(candidateHost, port)) {
+                return true;
+            }
+        }
+
+        await delay(intervalMs);
+    }
+
+    return false;
+}
+
 async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
     if (icemanTerminal) {
         if (showAlreadyRunningMessage) {
@@ -361,7 +388,7 @@ async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
         return false;
     }
 
-    if (await isTcpPortOpen(targetEndpoint.host, targetEndpoint.port)) {
+    if (await waitForTcpPortOpen(targetEndpoint.host, targetEndpoint.port, 500, 0)) {
         vscode.window.showWarningMessage(
             `GDB target ${targetEndpoint.host}:${targetEndpoint.port} is already in use. Skipping Andes ICEman start.`
         );
@@ -404,8 +431,14 @@ async function startIceman(folder, editor, showAlreadyRunningMessage = false) {
     icemanTerminal.show(true);
     icemanTerminal.sendText(command, true);
 
-    if (icemanConfig.startupDelayMs > 0) {
-        await delay(icemanConfig.startupDelayMs);
+    const startupTimeoutMs = Math.max(icemanConfig.startupDelayMs, 1000);
+    const started = await waitForTcpPortOpen(targetEndpoint.host, targetEndpoint.port, startupTimeoutMs);
+
+    if (!started) {
+        vscode.window.showErrorMessage(
+            `Andes ICEman did not start correctly. GDB target ${targetEndpoint.host}:${targetEndpoint.port} is not available. Check the Andes ICEman terminal for errors.`
+        );
+        return false;
     }
 
     return true;

@@ -116,9 +116,9 @@
           },
           "andesIceman.startupDelayMs": {
             "type": "number",
-            "default": 1000,
-            "minimum": 0,
-            "description": "Delay before GDB starts after launching Andes ICEman.",
+            "default": 3000,
+            "minimum": 1000,
+            "description": "Maximum time to wait for the Andes ICEman GDB target port to become available before starting GDB.",
             "order": 7
           }
         }

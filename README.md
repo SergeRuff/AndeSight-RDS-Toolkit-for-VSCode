@@ -16,7 +16,7 @@ Example workspace settings:
   "andesIceman.cwd": "C:\\Andestech\\AndeSight_RDS_v511\\ice",
   "andesIceman.andesRoot": "C:\\Andestech\\AndeSight_RDS_v511",
   "andesIceman.useAndesEnvironment": true,
-  "andesIceman.startupDelayMs": 1000
+  "andesIceman.startupDelayMs": 10000
 }
 ```
 
